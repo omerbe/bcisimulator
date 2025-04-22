@@ -38,14 +38,21 @@ def hand_task(recorder, decoder, target_type="random"):
     hand_tracker = HandTracker(camera_id=CV2_CAMERA_ID, show_tracking=True)
 
     # set up window for hand visualization
-    fig_hand = plt.figure(figsize=(SCREEN_WIDTH_IN, SCREEN_HEIGHT_IN), num='Hand Visualization')
+    fig_hand = plt.figure(figsize=(SCREEN_WIDTH_IN, SCREEN_HEIGHT_IN), num='Hand - DECODE')
     ax_hand = fig_hand.add_subplot(111, projection='3d')
     hand = SimpleHand(fig_hand, ax_hand)
     hand.set_flex(0, 0, 0, 0, 0)
     hand.draw()
+    
+    # === Create second window for target hand ===
+    fig_target = plt.figure(figsize=(SCREEN_WIDTH_IN, SCREEN_HEIGHT_IN), num='Hand - TARGET')
+    ax_target = fig_target.add_subplot(111, projection='3d')
+    target_hand = SimpleHand(fig_target, ax_target)
+    target_hand.set_flex(0, 0, 0, 0, 0)
+    target_hand.draw()
 
     # add button for recording
-    ax_record_button = plt.axes((0.05, 0.92, 0.15, 0.05))
+    ax_record_button = fig_hand.add_axes((0.05, 0.92, 0.15, 0.05))
     record_button = Button(ax_record_button, 'Start Recording', color="green")
 
     def toggle_recording():
@@ -66,7 +73,7 @@ def hand_task(recorder, decoder, target_type="random"):
 
     # add button for online/offline
     if decoder is not None:
-        ax_online_button = plt.axes((0.25, 0.92, 0.15, 0.05))
+        ax_online_button = fig_hand.add_axes((0.25, 0.92, 0.15, 0.05))
         online_button = Button(ax_online_button, 'Go Online', color="green")
 
         def toggle_online():
@@ -107,13 +114,13 @@ def hand_task(recorder, decoder, target_type="random"):
         if online:
             # run the decoder to get cursor position
             hand_pos_in = np.array(hand_pos_true)
-            hand_pos = decoder.decode(hand_pos_in)
+            hand_pos = decoder.decode(hand_pos_in)#crash if not lstm
             neural_history.append(decoder.get_recent_neural())
 
         else:
             # offline - just use the true hand position
             hand_pos = hand_pos_true
-
+        
         # draw hand
         azim, elev = ax_hand.azim, ax_hand.elev     # get current view
         ax_hand.clear()

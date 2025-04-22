@@ -44,7 +44,7 @@ class RealTimeDecoder:
 
         # decode (model expects shape (batch_size, seq_len, num_chans))
         neural_tensor = torch.Tensor(neural_history_np).reshape((1, self.seq_len, -1))
-        decoded_posvel = self.model(neural_tensor).reshape(-1)
+        decoded_posvel = self.model(neural_tensor).reshape(-1) #crash if not lstm
         decoded_posvel = self.output_scaler.inverse_transform(decoded_posvel.reshape(1, -1)).reshape(-1)
         pos = decoded_posvel[:self.num_dof]
         vel = decoded_posvel[self.num_dof:]
@@ -53,6 +53,7 @@ class RealTimeDecoder:
         new_pos = self.integration_beta * (self.prev_actual_pos + vel) + (1 - self.integration_beta) * pos
         new_pos = np.clip(new_pos, 0, 1)
         self.prev_actual_pos = new_pos
+        
         return new_pos
 
     def set_position(self, pos):

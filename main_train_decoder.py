@@ -19,6 +19,7 @@ parser.add_argument('-d', '--dataset', type=str, default="dataset_20231012_250se
 parser.add_argument('-o', '--save_name', type=str, default=None)
 parser.add_argument('-fb', '--fake_brain', type=str, default=None)
 parser.add_argument('--decoder_type', type=str, default='rnn')
+parser.add_argument('--rnn_type', type=str, default='rnn')
 parser.add_argument('--epochs', type=int, default=50)
 parser.add_argument('--train_data_frac', type=float, default=0.8)
 parser.add_argument('--seq_len', type=int, default=20)
@@ -29,6 +30,7 @@ args = parser.parse_args()
 dataset_fname = args.dataset
 save_name = args.save_name
 decoder_type = args.decoder_type
+rnn_type = args.rnn_type
 epochs = args.epochs
 train_data_frac = args.train_data_frac
 seq_len = args.seq_len
@@ -103,7 +105,7 @@ if decoder_type == 'ridge':
 elif decoder_type == 'rnn':
     # setup model and optimizer (we use the default hyperparams stored in the rnn.py module)
     device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
-    model = decoders.rnn.RNN(num_chans, num_outputs, hidden_size=decoders.rnn.RNN_CONFIG["hidden_size"], device=device)
+    model = decoders.rnn.RNN(num_chans, num_outputs, hidden_size=decoders.rnn.RNN_CONFIG["hidden_size"], rnn_type= rnn_type,device=device)
     optimizer = torch.optim.Adam(model.parameters(),
                                  lr=decoders.rnn.RNN_CONFIG["lr"],
                                  weight_decay=decoders.rnn.RNN_CONFIG["weight_decay"])
@@ -117,7 +119,7 @@ elif decoder_type == 'rnn':
 else:
     raise ValueError(f"Invalid decoder type: {decoder_type}")
 
-if plot_training:
+if True: #plot_training:
     if loss_history is not None:
         plt.plot(loss_history)
         plt.title("Training Loss by Epoch (normalized units)")
