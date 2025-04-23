@@ -15,12 +15,12 @@ from tasks.utils import Clock
 
 # Constants
 SCREEN_WIDTH_IN = 12 #10
-SCREEN_HEIGHT_IN = 6
+SCREEN_HEIGHT_IN = 8
 NEURAL_SCREEN_WIDTH_IN = 10
 NEURAL_SCREEN_HEIGHT_IN = 3
 MAX_FPS = 30
 DISP_FPS = False
-DO_PLOT_NEURAL = True
+DO_PLOT_NEURAL = False
 NUM_CHANS_TO_PLOT = 20
 NUM_NEURAL_HISTORY_PLOT = 100   # number of timepoints
 
@@ -47,10 +47,11 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
     online = False
 
     # init hand tracker
-    hand_tracker = HandTracker(camera_id=CV2_CAMERA_ID, show_tracking=True)
+    hand_tracker = HandTracker(camera_id=CV2_CAMERA_ID, show_tracking=False)
 
     fig = plt.figure(figsize=(SCREEN_WIDTH_IN, SCREEN_HEIGHT_IN), num='Hand - Both')
-    gs = fig.add_gridspec(1, 2)
+    # gs = fig.add_gridspec(1, 2)
+    gs = fig.add_gridspec(2, 2, height_ratios=[3, 1])
 
     ax_hand = fig.add_subplot(gs[0,0], projection='3d')
     ax_hand.set_title('Hand - DECODE')
@@ -113,15 +114,16 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
 
     # set up window for neural visualization
     fig_neural = None
-    if DO_PLOT_NEURAL and decoder is not None:
+    if decoder is not None:
         neural_history = collections.deque(maxlen=NUM_NEURAL_HISTORY_PLOT)
-        fig_neural, ax = plt.subplots(figsize=(NEURAL_SCREEN_WIDTH_IN, NEURAL_SCREEN_HEIGHT_IN),
-                                      num='Neural Data Visualization (first 20 channels)')
-        ani = FuncAnimation(fig_neural,
-                            lambda i: visualize_neural_data(ax, neural_history, NUM_CHANS_TO_PLOT),
-                            interval=1000 / MAX_FPS,
-                            cache_frame_data=False)
-        plt.show(block=False)  # non-blocking, continues with script execution
+        if DO_PLOT_NEURAL:
+            fig_neural, ax = plt.subplots(figsize=(NEURAL_SCREEN_WIDTH_IN, NEURAL_SCREEN_HEIGHT_IN),
+                                        num='Neural Data Visualization (first 20 channels)')
+            ani = FuncAnimation(fig_neural,
+                                lambda i: visualize_neural_data(ax, neural_history, NUM_CHANS_TO_PLOT),
+                                interval=1000 / MAX_FPS,
+                                cache_frame_data=False)
+            plt.show(block=False)  # non-blocking, continues with script execution
 
     # main loop
     clock = Clock(disp_fps=DISP_FPS)
