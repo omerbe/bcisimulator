@@ -48,7 +48,7 @@ class RNN(nn.Module):
             h = self.hidden
         else:
             h = self.init_hidden(x.shape[0]) 
-        # h = self.hidden if self.hidden else self.init_hidden(x.shape[0]) # crash if not lstm. "if self.hidden" crashes !!!!!!!
+        # h = self.hidden if self.hidden else self.init_hidden(x.shape[0]) # "if self.hidden" crashes !!!!!!!
         out, h = self.rnn(x, h)
         out = self.fc(out[:, -1])  # out now has shape (batch_size, num_outs) like (64, 2)
         if self.is_online:

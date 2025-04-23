@@ -38,6 +38,12 @@ def main():
                         help="Name of the decoder file (e.g., rnndecoder1). If specified, a real-time wrapper will load the decoder.")
     parser.add_argument("-tt", "--target_type", default="random", choices=["random", "centerout"],
                         help="Target type: random or centerout.")
+    parser.add_argument("-tdof", "--target_dof", default=1, choices=[1,2,3],
+                        help="Target dof: 1, 2, 3.")
+    parser.add_argument("-thold", "--target_hold_time", default=500,
+                        help="Target hold time in milliseconds")
+    parser.add_argument("-tsize", "--target_size", default=0.15,
+                        help="Target size, range from 0.05 to 0.25")
     # add argument for the decoder integration beta
     parser.add_argument("-b", "--integration_beta", default=0.98, type=float,
                         help="Integration beta: the percentage of decoded position that is integrated velocity.")
