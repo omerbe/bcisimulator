@@ -31,7 +31,7 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
     print("\n\t✋  🤙 ✊️  Starting hand task, use ctrl-c to exit  ✌️ 👌 🖐  \n")
     
     # Target generation
-    trial_timeout = 20000
+    trial_timeout = 10000*target_dof # 10 sec per dof
     if target_type == "random":
         edge = 0.05  # prevent targets in the outer 5% of the screen
         target_gen = HandTargetGenerator(num_dof=target_dof, center_out=False, is_discrete=False, range=[edge, 1 - edge])

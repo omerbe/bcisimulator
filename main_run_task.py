@@ -32,17 +32,17 @@ def get_task(task_choice):
 
 def main():
     parser = argparse.ArgumentParser(description="BCI Simulator")
-    parser.add_argument("-t", "--task", default="cursor", choices=["cursor", "hand"],
+    parser.add_argument("-t", "--task", default="hand", choices=["cursor", "hand"],
                         help="Task choice: cursor or hand.")
     parser.add_argument("-d", "--decoder", default=None,
                         help="Name of the decoder file (e.g., rnndecoder1). If specified, a real-time wrapper will load the decoder.")
     parser.add_argument("-tt", "--target_type", default="random", choices=["random", "centerout"],
                         help="Target type: random or centerout.")
-    parser.add_argument("-tdof", "--target_dof", default=1, choices=[1,2,3],
+    parser.add_argument("-tdof", "--target_dof", default=1, type=int, choices=[1,2,3],
                         help="Target dof: 1, 2, 3.")
-    parser.add_argument("-thold", "--target_hold_time", default=500,
+    parser.add_argument("-thold", "--target_hold_time", type=float, default=500,
                         help="Target hold time in milliseconds")
-    parser.add_argument("-tsize", "--target_size", default=0.15,
+    parser.add_argument("-tsize", "--target_size", type=float, default=0.15,
                         help="Target size, range from 0.05 to 0.25")
     # add argument for the decoder integration beta
     parser.add_argument("-b", "--integration_beta", default=0.98, type=float,
@@ -58,7 +58,7 @@ def main():
         decoder = load_decoder(args.decoder, num_dof, args.integration_beta)
 
     # run the task
-    task(DataRecorder(), decoder, target_type=args.target_type)
+    task(DataRecorder(), decoder, target_type=args.target_type, target_size = args.target_size, hold_time = args.target_hold_time, target_dof = args.target_dof)
 
 
 if __name__ == "__main__":
