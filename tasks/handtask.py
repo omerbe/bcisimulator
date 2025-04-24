@@ -27,7 +27,7 @@ NUM_NEURAL_HISTORY_PLOT = 100   # number of timepoints
 CV2_CAMERA_ID = 0               # default camera id for cv2 (usually the webcam)
 
 
-def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_time = 500, target_dof = 1):
+def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_time = 500, target_dof = 1, is_demo = False, decoder_name = "GT"):
     print("\n\t✋  🤙 ✊️  Starting hand task, use ctrl-c to exit  ✌️ 👌 🖐  \n")
     
     # Target generation
@@ -67,33 +67,36 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
 
 
     # add button for recording
-    
-    ax_record_button = fig.add_axes((0.05, 0.92, 0.15, 0.05))
-    record_button = Button(ax_record_button, 'Start Recording', color="green")
+    if is_demo:
+        ax_record_button = fig.add_axes((0.05, 0.92, 0.15, 0.05))
+        record_button = Button(ax_record_button, 'Start Recording', color="green")
     
     #useful text boxes
     decode_text = fig.text(0.25, 0.86, "Hand - DECODE", fontsize=12)
-    results_text = fig.text(0.5, 0.95, f"Successes/Minute: ", fontsize=12)
+    results_text = fig.text(0.35, 0.95, f"Successes/Minute: ", fontsize=12)
+    if is_demo:
+        decoder_name_text = fig.text(0.7, 0.95, f"Using Decoder: ", fontsize=12)
 
-    def toggle_recording():
-        nonlocal recording
-        recording = not recording
-        if recording:
-            print("started recording")
-            record_button.label.set_text("Stop Recording")
-            record_button.color = "red"
+    if is_demo:
+        def toggle_recording():
+            nonlocal recording
+            recording = not recording
+            if recording:
+                print("started recording")
+                record_button.label.set_text("Stop Recording")
+                record_button.color = "red"
 
-        else:
-            print("stopped recording")
-            record_button.label.set_text("Start Recording")
-            record_button.color = "green"
-            recorder.save_to_file()
+            else:
+                print("stopped recording")
+                record_button.label.set_text("Start Recording")
+                record_button.color = "green"
+                recorder.save_to_file()
 
-    record_button.on_clicked(lambda _: toggle_recording())
+        record_button.on_clicked(lambda _: toggle_recording())
 
     # add button for online/offline
     if decoder is not None:
-        ax_online_button = fig.add_axes((0.25, 0.92, 0.15, 0.05))
+        ax_online_button = fig.add_axes((0.05, 0.92, 0.15, 0.05)) #fig.add_axes((0.25, 0.92, 0.15, 0.05))
         online_button = Button(ax_online_button, 'Go Online', color="green")
 
         def toggle_online():
@@ -128,9 +131,13 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
     # main loop
     clock = Clock(disp_fps=DISP_FPS)
     trial_start_time = 0
+    
+    #demo metrics
     total_successful = 0
+    trial_idx = 0
     first_success_time = 0
-    while True:
+    trial_times = np.zeros(11)
+    while trial_idx < 11: #since trial idx is only updated in demo, if not demo then effectively while true
 
         # get hand position
         hand_pos_true = hand_tracker.get_hand_position()
@@ -156,8 +163,9 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
         
         decode_text.set_text(f"Hand - DECODE: {np.round(hand_pos, 2)}")
         results_text.set_text(f"Successes/Minute: {np.round(60000*total_successful/(clock.get_time_ms()-first_success_time), 1)}" ) #starts after first success
+        if is_demo:
+            decoder_name_text.set_text(f"Using Decoder: {decoder_name}" )
         fig.canvas.draw_idle()
-        
         
         if max(abs(np.subtract(hand_pos, current_target))) < target_size:
             if time_entered_target == 0:
@@ -166,6 +174,9 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
                 if total_successful == 0:
                     first_success_time = clock.get_time_ms()
                 total_successful +=1
+                if is_demo:
+                    trial_times[trial_idx] = clock.get_time_ms() - trial_start_time
+                    trial_idx += 1
                 current_target = target_gen.generate_targets()
                 trial_start_time = clock.get_time_ms()
                 azim, elev = ax_target.azim, ax_target.elev     # get current view
@@ -182,6 +193,9 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
         # trial timeout
         if clock.get_time_ms() - trial_start_time >= trial_timeout:
             current_target = target_gen.generate_targets()
+            if is_demo:
+                trial_times[trial_idx] = trial_timeout
+                trial_idx += 1
             trial_start_time = clock.get_time_ms()
             azim, elev = ax_target.azim, ax_target.elev     # get current view
             ax_target.clear()
@@ -201,12 +215,15 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
             fig_neural.canvas.flush_events()
 
         # record data if recording is active
-        if recording:
-            recorder.record(clock.get_time_ms(),
-                            int(clock.get_time_ms() / 1000) + 1,    # dummy trials, once per second
-                            hand_pos,
-                            [0, 0, 0, 0, 0],                        # dummy target position
-                            online)
+        if is_demo:
+            if recording:
+                recorder.record(clock.get_time_ms(),
+                                int(clock.get_time_ms() / 1000) + 1,    # dummy trials, once per second
+                                hand_pos,
+                                [0, 0, 0, 0, 0],                        # dummy target position
+                                online)
 
         # update clock to limit frame rate (usually we're well below this)
         clock.tick(MAX_FPS)
+    plt.close(fig)
+    return trial_times
