@@ -31,7 +31,7 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
     print("\n\t✋  🤙 ✊️  Starting hand task, use ctrl-c to exit  ✌️ 👌 🖐  \n")
     
     # Target generation
-    trial_timeout = 10000*target_dof # 10 sec per dof
+    trial_timeout = 12000*target_dof # 10 sec per dof
     if target_type == "random":
         edge = 0.05  # prevent targets in the outer 5% of the screen
         target_gen = HandTargetGenerator(num_dof=target_dof, center_out=False, is_discrete=False, range=[edge, 1 - edge])
@@ -67,17 +67,19 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
 
 
     # add button for recording
-    if is_demo:
+    if not is_demo:
         ax_record_button = fig.add_axes((0.05, 0.92, 0.15, 0.05))
         record_button = Button(ax_record_button, 'Start Recording', color="green")
     
     #useful text boxes
     decode_text = fig.text(0.25, 0.86, "Hand - DECODE", fontsize=12)
-    results_text = fig.text(0.35, 0.95, f"Successes/Minute: ", fontsize=12)
+    results_text = fig.text(0.25, 0.95, f"Successes/Minute: ", fontsize=12)
     if is_demo:
-        decoder_name_text = fig.text(0.7, 0.95, f"Using Decoder: ", fontsize=12)
+        decoder_name_text = fig.text(0.45, 0.95, f"Using Decoder: ", fontsize=12)
+        target_type_text = fig.text(0.7, 0.95, f"Target Type: ", fontsize=12)
+        target_dof_text = fig.text(0.9, 0.95, f"DOF: ", fontsize=12)
 
-    if is_demo:
+    if not is_demo:
         def toggle_recording():
             nonlocal recording
             recording = not recording
@@ -133,11 +135,15 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
     trial_start_time = 0
     
     #demo metrics
+    total_trials = 20
     total_successful = 0
     trial_idx = 0
     first_success_time = 0
-    trial_times = np.zeros(11)
-    while trial_idx < 11: #since trial idx is only updated in demo, if not demo then effectively while true
+    trial_times = np.zeros(total_trials)
+    if is_demo:
+        if decoder is not None:
+            toggle_online()
+    while trial_idx < total_trials: #since trial idx is only updated in demo, if not demo then effectively while true
 
         # get hand position
         hand_pos_true = hand_tracker.get_hand_position()
@@ -165,6 +171,8 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
         results_text.set_text(f"Successes/Minute: {np.round(60000*total_successful/(clock.get_time_ms()-first_success_time), 1)}" ) #starts after first success
         if is_demo:
             decoder_name_text.set_text(f"Using Decoder: {decoder_name}" )
+            target_type_text.set_text(f"Target Type: {target_type}" )
+            target_dof_text.set_text(f"DOF: {target_dof}" )
         fig.canvas.draw_idle()
         
         if max(abs(np.subtract(hand_pos, current_target))) < target_size:
@@ -215,7 +223,7 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
             fig_neural.canvas.flush_events()
 
         # record data if recording is active
-        if is_demo:
+        if not is_demo:
             if recording:
                 recorder.record(clock.get_time_ms(),
                                 int(clock.get_time_ms() / 1000) + 1,    # dummy trials, once per second

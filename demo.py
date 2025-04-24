@@ -4,6 +4,7 @@ from data_recorder import DataRecorder
 from inputs.decoder import RealTimeDecoder
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
+import numpy as np
 
 
 def load_decoder(decoder_name, num_dof, integration_beta):
@@ -70,6 +71,26 @@ def show_popup(message, duration=5):
     plt.close()
     plt.ioff()
 
+def show_results_table(data, title="Results Table", column_labels=None, row_labels=None):
+    fig, ax = plt.subplots(figsize=(8, 4), num=title)
+    ax.set_axis_off()
+    ax.set_title(title, fontsize=16, pad=20)
+
+    # Build the table
+    table = ax.table(
+        cellText=data,
+        colLabels=column_labels,
+        rowLabels=row_labels,
+        loc='center',
+        cellLoc='center'
+    )
+    table.scale(1, 2)  # Adjust size: width x height
+    table.auto_set_font_size(False)
+    table.set_fontsize(12)
+
+    plt.tight_layout()
+    plt.show()
+
 
 def main():
     parser = argparse.ArgumentParser(description="BCI Simulator")
@@ -81,7 +102,7 @@ def main():
                         help="Target type: random or centerout.")
     parser.add_argument("-tdof", "--target_dof", default=1, type=int, choices=[1,2,3],
                         help="Target dof: 1, 2, 3.")
-    parser.add_argument("-thold", "--target_hold_time", type=float, default=500,
+    parser.add_argument("-thold", "--target_hold_time", type=float, default=400,
                         help="Target hold time in milliseconds")
     parser.add_argument("-tsize", "--target_size", type=float, default=0.15,
                         help="Target size, range from 0.05 to 0.25")
@@ -94,20 +115,27 @@ def main():
     task, num_dof = get_task(args.task)
     
     #DEMO: cycle through all decoders and target styles and compare to GT performance
+    data = np.zeros((4,3))
     decoders = ['GT','handrnn', 'handlstm', 'handgru']
     target_types = ["random", "centerout"]
     show_popup("Instructions...", duration=5)
-    for target_dof in [1,2,3]:
-        for target_type in target_types:
-            for decoder_name in decoders:
-                decoder = None
-                if decoder_name != 'GT':
-                    decoder = load_decoder(decoder_name, num_dof, args.integration_beta)
     
-                trial_times = task(DataRecorder(), decoder, target_type=args.target_type, target_size = args.target_size, hold_time = args.target_hold_time, target_dof = args.target_dof,is_demo = True, decoder_name = decoder_name)
-                print(trial_times)
-                ## todo 
-                # remove the first trial, force online for decoders
+    for target_type_idx in range(len(target_types)):
+        target_type = target_types[target_type_idx]
+        for decoder_name_idx in range(len(decoders)):
+            decoder_name = decoders[decoder_name_idx]
+            
+            decoder = None
+            if decoder_name != 'GT':
+                decoder = load_decoder(decoder_name, num_dof, args.integration_beta)
+
+            trial_times = task(DataRecorder(), decoder, target_type=target_type, target_size = args.target_size, hold_time = args.target_hold_time, target_dof = args.target_dof, is_demo = True, decoder_name = decoder_name)
+            data[decoder_name_idx,target_type_idx] = np.median(trial_times[1:])
+   
+    data[:,2] = [np.mean(data[i,:2]) for i in range(4)]
+    column_labels = ["Center Out", "Random", "All"]
+    row_labels = ["GT - No Decoder", "Vanilla RNN", "LSTM", "GRU"]
+    show_results_table(data, title="Median Trial Time (ms)", column_labels=column_labels, row_labels=row_labels)
 
 if __name__ == "__main__":
     main()
