@@ -135,7 +135,7 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
     trial_start_time = 0
     
     #demo metrics
-    total_trials = 20
+    total_trials = 11
     total_successful = 0
     trial_idx = 0
     first_success_time = 0

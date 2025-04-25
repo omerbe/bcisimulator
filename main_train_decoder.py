@@ -122,7 +122,9 @@ else:
 if True: #plot_training:
     if loss_history is not None:
         plt.plot(loss_history)
-        plt.title("Training Loss by Epoch (normalized units)")
+        plt.title("Training Loss by Epoch - LSTM")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
         plt.show()
     fig, axs = plt.subplots(2, num_dof, figsize=(num_dof * 3, 5))
     axs = axs.flatten()
