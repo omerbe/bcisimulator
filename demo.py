@@ -149,7 +149,7 @@ def main():
             print(data)
     
     for i in range(len(decoders)):
-        data[i][2] = sum(data[i][:len(target_types)])/len(target_types)
+        data[i][len(target_types)] = sum(data[i][:len(target_types)])/len(target_types)
     column_labels = ["Center Out", "Random", "All"]
     row_labels = ["GT - No Decoder", "Ridge Regression", "Vanilla RNN", "LSTM", "GRU"]
     show_results_table(data, title="Median Trial Time (ms)", column_labels=column_labels, row_labels=row_labels)

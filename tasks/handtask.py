@@ -139,6 +139,7 @@ def hand_task(recorder, decoder, target_type="random", target_size = 0.15, hold_
     total_successful = 0
     trial_idx = 0
     first_success_time = 0
+    time_entered_target = 0
     trial_times = np.zeros(total_trials)
     if is_demo:
         if decoder is not None:
